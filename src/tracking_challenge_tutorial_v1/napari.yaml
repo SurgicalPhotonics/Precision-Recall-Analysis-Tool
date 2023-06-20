@@ -1,0 +1,41 @@
+name: tracking-challenge-tutorial_v1
+display_name: Tracking Challenge Solver V1
+contributions:
+  commands:
+    - id: tracking-challenge-tutorial_v1.get_reader
+      python_name: tracking_challenge_tutorial_v1._reader:napari_get_reader
+      title: Open data with Tracking Challenge Solver V1
+    - id: tracking-challenge-tutorial_v1.write_multiple
+      python_name: tracking_challenge_tutorial_v1._writer:write_multiple
+      title: Save multi-layer data with Tracking Challenge Solver V1
+    - id: tracking-challenge-tutorial_v1.write_single_image
+      python_name: tracking_challenge_tutorial_v1._writer:write_single_image
+      title: Save image data with Tracking Challenge Solver V1
+    - id: tracking-challenge-tutorial_v1.make_qwidget
+      python_name: tracking_challenge_tutorial_v1._widget:ExampleQWidget
+      title: Make example QWidget
+    - id: tracking-challenge-tutorial_v1.make_magic_widget
+      python_name: tracking_challenge_tutorial_v1._widget:example_magic_widget
+      title: Make example magic widget
+    - id: tracking-challenge-tutorial_v1.make_func_widget
+      python_name: tracking_challenge_tutorial_v1._widget:example_function_widget
+      title: Make example function widget
+  readers:
+    - command: tracking-challenge-tutorial_v1.get_reader
+      accepts_directories: false
+      filename_patterns: ['*.npy']
+  writers:
+    - command: tracking-challenge-tutorial_v1.write_multiple
+      layer_types: ['image*','labels*']
+      filename_extensions: []
+    - command: tracking-challenge-tutorial_v1.write_single_image
+      layer_types: ['image']
+      filename_extensions: ['.npy']
+  widgets:
+    - command: tracking-challenge-tutorial_v1.make_qwidget
+      display_name: Example QWidget
+    - command: tracking-challenge-tutorial_v1.make_magic_widget
+      display_name: Example Magic Widget
+    - command: tracking-challenge-tutorial_v1.make_func_widget
+      autogenerate: true
+      display_name: Example Function Widget
