@@ -1,7 +1,5 @@
-<p align="center">
 
-  ![chrislearns](https://github.com/chrislearns/tracking-challenge-tutorial_v1/assets/77995541/758d9405-4692-489e-a648-ab28db109e9b)
-</p>
+<img src="https://github.com/chrislearns/tracking-challenge-tutorial_v1/assets/77995541/758d9405-4692-489e-a648-ab28db109e9b" alt="chrislearns" width="80"/>
 
 <h1 align="center">tracking-challenge-tutorial-v1</h1>
 
