@@ -1,6 +1,6 @@
 <div align="center">
   <img src="https://github.com/chrislearns/tracking-challenge-tutorial_v1/assets/77995541/133f8317-4d5e-4ba0-91ea-e82806aa0690" alt="napari" width="80"/>
-<h1 style="padding-bottom: 20">x</h1>
+<h1 style="padding-bottom: 20; display:inline-block">x</h1>
 <img src="https://github.com/chrislearns/tracking-challenge-tutorial_v1/assets/77995541/758d9405-4692-489e-a648-ab28db109e9b" alt="chrislearns" width="80"/>
 </div>
 <h1 align="center">tracking-challenge-tutorial-v1</h1>
