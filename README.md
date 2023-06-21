@@ -1,54 +1,50 @@
-# tracking-challenge-tutorial_v1
+<p align="center">
+  <img src="https://raw.githubusercontent.com/napari/napari/main/images/napari.png" width="300">
+</p>
 
-[![License MIT](https://img.shields.io/pypi/l/tracking-challenge-tutorial_v1.svg?color=green)](https://github.com/chrislearns/tracking-challenge-tutorial_v1/raw/main/LICENSE)
-[![PyPI](https://img.shields.io/pypi/v/tracking-challenge-tutorial_v1.svg?color=green)](https://pypi.org/project/tracking-challenge-tutorial_v1)
-[![Python Version](https://img.shields.io/pypi/pyversions/tracking-challenge-tutorial_v1.svg?color=green)](https://python.org)
-[![tests](https://github.com/chrislearns/tracking-challenge-tutorial_v1/workflows/tests/badge.svg)](https://github.com/chrislearns/tracking-challenge-tutorial_v1/actions)
-[![codecov](https://codecov.io/gh/chrislearns/tracking-challenge-tutorial_v1/branch/main/graph/badge.svg)](https://codecov.io/gh/chrislearns/tracking-challenge-tutorial_v1)
-[![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/tracking-challenge-tutorial_v1)](https://napari-hub.org/plugins/tracking-challenge-tutorial_v1)
+<h1 align="center">tracking-challenge-tutorial-v1</h1>
 
-First attempt building a plugin for napari using the cookiecutter via a tutorial
+<p align="center">
+  <a href="https://github.com/chrislearns/tracking-challenge-tutorial-v1/raw/main/LICENSE"><img alt="License MIT" src="https://img.shields.io/pypi/l/tracking-challenge-tutorial-v1.svg?color=green"></a>
+  <a href="https://python.org"><img alt="Python Version" src="https://img.shields.io/pypi/pyversions/tracking-challenge-tutorial-v1.svg?color=green"></a>
+</p>
 
-----------------------------------
+<p align="center">
+  First attempt at building a plugin for napari using the cookiecutter via this tutorial: <a href="https://www.youtube.com/watch?v=NL-VywidzXE">https://www.youtube.com/watch?v=NL-VywidzXE</a>
+</p>
+
+---
+## Overview
 
 This [napari] plugin was generated with [Cookiecutter] using [@napari]'s [cookiecutter-napari-plugin] template.
 
-<!--
-Don't miss the full getting started guide to set up your new package:
-https://github.com/napari/cookiecutter-napari-plugin#getting-started
-
-and review the napari docs for plugin developers:
-https://napari.org/stable/plugins/index.html
--->
+> Don't miss the full getting started guide to set up your new package:
+> https://github.com/napari/cookiecutter-napari-plugin#getting-started
+>
+> and review the napari docs for plugin developers:
+> https://napari.org/stable/plugins/index.html
 
 ## Installation
 
-You can install `tracking-challenge-tutorial_v1` via [pip]:
+To install the latest development version, run the following command:
 
-    pip install tracking-challenge-tutorial_v1
-
-
-
-To install latest development version :
-
-    pip install git+https://github.com/chrislearns/tracking-challenge-tutorial_v1.git
-
-
-## Contributing
-
-Contributions are very welcome. Tests can be run with [tox], please ensure
-the coverage at least stays the same before you submit a pull request.
+```bash
+pip install git+https://github.com/chrislearns/tracking-challenge-tutorial-v1.git
+```
 
 ## License
 
-Distributed under the terms of the [MIT] license,
-"tracking-challenge-tutorial_v1" is free and open source software
+"tracking-challenge-tutorial-v1" is distributed under the terms of the [MIT] license and is free and open-source software.
 
 ## Issues
 
 If you encounter any problems, please [file an issue] along with a detailed description.
 
+[file an issue]: https://github.com/chrislearns/tracking-challenge-tutorial-v1/issues
 [napari]: https://github.com/napari/napari
+[tox]: https://tox.readthedocs.io/en/latest/
+[pip]: https://pypi.org/project/pip/
+[PyPI]: https://pypi.org/
 [Cookiecutter]: https://github.com/audreyr/cookiecutter
 [@napari]: https://github.com/napari
 [MIT]: http://opensource.org/licenses/MIT
@@ -58,10 +54,3 @@ If you encounter any problems, please [file an issue] along with a detailed desc
 [Apache Software License 2.0]: http://www.apache.org/licenses/LICENSE-2.0
 [Mozilla Public License 2.0]: https://www.mozilla.org/media/MPL/2.0/index.txt
 [cookiecutter-napari-plugin]: https://github.com/napari/cookiecutter-napari-plugin
-
-[file an issue]: https://github.com/chrislearns/tracking-challenge-tutorial_v1/issues
-
-[napari]: https://github.com/napari/napari
-[tox]: https://tox.readthedocs.io/en/latest/
-[pip]: https://pypi.org/project/pip/
-[PyPI]: https://pypi.org/
