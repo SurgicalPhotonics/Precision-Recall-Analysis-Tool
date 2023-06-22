@@ -11,6 +11,9 @@ contributions:
     - id: tracking-challenge-tutorial-v1.make_qwidget
       python_name: tracking_challenge_tutorial_v1._widget:SegmentationDiffHighlight
       title: Make example QWidget
+    - id: tracking-challenge-tutorial-v1.make_qwidget2
+      python_name: tracking_challenge_tutorial_v1._widget:PointBasedDataAnalyticsWidget
+      title: Make example QWidget
     - id: tracking-challenge-tutorial-v1.make_magic_widget
       python_name: tracking_challenge_tutorial_v1._widget:segment_by_threshold
       title: Make segmentation by threshold widget
@@ -25,5 +28,7 @@ contributions:
   widgets:
     - command: tracking-challenge-tutorial-v1.make_qwidget
       display_name: Example QWidget
+    - command: tracking-challenge-tutorial-v1.make_qwidget2
+      display_name: ⭐️ Data Analytics Widget
     - command: tracking-challenge-tutorial-v1.make_magic_widget
       display_name: Segment by Threshold
