@@ -1,0 +1,18 @@
+Metric,Value
+True Positive,36
+True Negative,47
+False Positive,4
+False Negative,3
+,
+Precision,0.9
+Accuracy,212.82051282051282
+Recall,0.9230769230769231
+F-Score,0.9113924050632911
+True Positive Rate,0.9230769230769231
+False Positive Rate,0.0784313725490196
+True Negative Rate,0.07692307692307693
+Positive Likelihood Ratio,11.76923076923077
+Negative Likelihood Ratio,0.08346972176759412
+Positive Predictive Value,0.9
+Negative Predictive Value,0.94
+Markedness,0.8399999999999999

@@ -1,6 +1,6 @@
 import numpy as np
 
-from tracking_challenge_tutorial_v1 import ExampleQWidget, example_magic_widget
+from precision_recall_analysis_tool import ExampleQWidget, example_magic_widget
 
 
 # make_napari_viewer is a pytest fixture that returns a napari viewer object

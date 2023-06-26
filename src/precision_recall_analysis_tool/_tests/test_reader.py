@@ -1,6 +1,6 @@
 import numpy as np
 
-from tracking_challenge_tutorial_v1 import napari_get_reader
+from precision_recall_analysis_tool import napari_get_reader
 
 
 # tmp_path is a pytest fixture

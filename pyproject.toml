@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 
 [tool.setuptools_scm]
-write_to = "src/tracking_challenge_tutorial_v1/_version.py"
+write_to = "src/precision_recall_analysis_tool/_version.py"
 
 [tool.black]
 line-length = 79

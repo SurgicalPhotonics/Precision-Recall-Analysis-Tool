@@ -1,0 +1,34 @@
+name: precision-recall-analysis-tool
+display_name: Precision-Recall Analysis Tool
+contributions:
+  commands:
+    - id: precision-recall-analysis-tool.get_reader
+      python_name: precision_recall_analysis_tool._reader:napari_get_reader
+      title: Open Ground Truth tracking challenge segmentation data
+    - id: precision-recall-analysis-tool.write_single_image
+      python_name: precision_recall_analysis_tool._writer:write_single_image
+      title: Save labels data with Tracking Challenge Solver
+    - id: precision-recall-analysis-tool.generalCounter
+      python_name: precision_recall_analysis_tool._widget:GeneralCounter
+      title: General Counter Widget
+    - id: precision-recall-analysis-tool.pointBasedDataAnalyticsWidget
+      python_name: precision_recall_analysis_tool._widget:PointBasedDataAnalyticsWidget
+      title: Precision Recall Analysis Widget
+    - id: precision-recall-analysis-tool.make_magic_widget
+      python_name: precision_recall_analysis_tool._widget:segment_by_threshold
+      title: Make segmentation by threshold widget
+  readers:
+    - command: precision-recall-analysis-tool.get_reader
+      accepts_directories: true
+      filename_patterns: []
+  writers:
+    - command: precision-recall-analysis-tool.write_single_image
+      layer_types: ['labels']
+      filename_extensions: ['.zip']
+  widgets:
+    - command: precision-recall-analysis-tool.generalCounter
+      display_name: 👆🏼 Object Counter
+    - command: precision-recall-analysis-tool.pointBasedDataAnalyticsWidget
+      display_name: ⭐️ Data Analytics Widget
+    # - command: precision-recall-analysis-tool.make_magic_widget
+    #   display_name: Segment by Threshold
