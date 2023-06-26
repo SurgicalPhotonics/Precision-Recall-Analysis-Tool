@@ -309,6 +309,7 @@ class PointBasedDataAnalyticsWidget(QWidget):
         ppv = tpCount / predictedPositive
         npv = tnCount / predictedNegative
         markedness = ppv + npv - 1
+        jaccardIndex = tpCount / (tpCount + fnCount + fpCount)
 
         baseStats = {
             "True Positive": tpCount,
@@ -330,6 +331,7 @@ class PointBasedDataAnalyticsWidget(QWidget):
             "Positive Predictive Value": ppv,
             "Negative Predictive Value": npv,
             "Markedness": markedness,
+            "Jaccard Index": jaccardIndex
             # "Matthews correlation coefficient": ,
         }
 
