@@ -11,14 +11,18 @@ from enum import Enum
 from functools import partial
 from typing import Optional
 
+from skimage import draw
 import dask.array as da
 import napari
 from magicgui import magic_factory
-from napari.layers import Points
+import matplotlib.path as mplPath
+from napari.layers import Points, Image, Shapes
 
+import numpy as np
 # https://github.com/napari/napari/blob/19f83a2195c55518f7b89146f704021017118679/napari/layers/points/_points_constants.py
 # https://napari.org/stable/_modules/napari/layers/points/points.html
 from napari.layers.points._points_constants import Mode
+from napari.layers.shapes._shapes_constants import Mode
 from napari.utils import progress
 from qtpy.QtWidgets import (
     QComboBox,
@@ -37,6 +41,8 @@ from skimage.filters import (
     threshold_yen,
 )
 from skimage.measure import label
+from skimage import data
+
 
 
 class Threshold(Enum):
@@ -405,6 +411,86 @@ class PointBasedDataAnalyticsWidget(QWidget):
                     if isinstance(layer, Points)
                 ]
             )
+
+class CreateROCCurve(QWidget):
+    def __init__(self, napari_viewer):
+        super().__init__()
+        self.viewer = napari_viewer
+        self.setLayout(QVBoxLayout())
+        self.addShapesLayerButton = QPushButton("")
+        self.addShapesLayerButton.clicked.connect(lambda: self.addShapesLayer())
+        self.createMasksAndNewLayersButton = QPushButton("Create Section Layers")
+        self.createMasksAndNewLayersButton.clicked.connect(lambda: self.createMasksAndNewLayers())
+        self.layout().addWidget(self.addShapesLayerButton)
+        self.layout().addWidget(self.createMasksAndNewLayersButton)
+        self.layout().addStretch()
+
+    def addShapesLayer(self):
+        maskDrawingLayer = self.viewer.add_shapes(name="SectionMaskShapes")
+        maskDrawingLayer.mode = Mode.ADD_POLYGON
+
+
+    def createMasksAndNewLayers(self):
+        layer_image = self.getImageLayer(named="raw")
+        layer_polygon = self.getShapesLayer(named="SectionMaskShapes")
+
+        if layer_image is not None and layer_polygon is not None:
+            # Add shape layer with rectangle
+            # polygon1 = np.array([[20, 20], [60, 20], [70, 50], [50, 80], [30, 50]])
+            # polygon2 = np.array([[120, 120], [160, 120], [170, 150], [150, 180], [130, 150]])
+            # polygons = [polygon1, polygon2]
+            # layer_polygon = self.viewer.add_shapes(polygons, shape_type='polygon', edge_width=1, edge_color='coral', face_color='royalblue', name='shapes')
+            polygons = layer_polygon.data
+            for index, polygon in enumerate(polygons):
+                # Create a Path object from the polygon points
+                poly_path = mplPath.Path(polygon)
+                
+                # Calculate the bounds of the polygon
+                x_min, y_min = np.min(polygon, axis=0)
+                x_max, y_max = np.max(polygon, axis=0)
+
+                # Create a mask of the same size as the input image
+                mask = np.zeros_like(layer_image.data, dtype=np.bool)
+                print(layer_image.data)
+                print(mask)
+                print(".......")
+
+                # Iterate over the pixels inside the bounding box of the polygon
+                counter = 0
+                zRange = polygon.ndim
+                yRange = range(int(y_min), int(y_max) + 1)
+                xRange = range(int(x_min), int(x_max) + 1)
+                for z in range(zRange):
+                    for i in yRange:
+                        for j in xRange:
+                            print(i)
+                            print(j)
+                            counter += 1
+                            print(f"{counter}/{(y_max - y_min) * (x_max - x_min) * zRange}")
+                            if poly_path.contains_point((j, i)):
+                                mask[z, j, i] = True
+
+                print("Done Calc")
+                masked_data = mask * layer_image.data
+                masked_layer = self.viewer.add_image(masked_data, name=f'section_{index}', colormap='green', blending='additive')
+                masked_layer.gamma = 2
+                masked_layer.opacity = 0.5
+                layer_polygon.visible = False
+                layer_polygon.visible = False
+
+    def getImageLayer(self, named: str) -> Optional[Image]:
+        for layer in self.viewer.layers:
+            if layer.name.lower() == named.lower() and isinstance(layer, Image):
+                return layer
+
+        return None
+    
+    def getShapesLayer(self, named: str) -> Optional[Image]:
+        for layer in self.viewer.layers:
+            if layer.name.lower() == named.lower() and isinstance(layer, Shapes):
+                return layer
+
+        return None
 
 
 @magic_factory

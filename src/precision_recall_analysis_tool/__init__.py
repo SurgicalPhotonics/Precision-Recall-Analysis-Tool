@@ -7,6 +7,7 @@ from ._reader import napari_get_reader
 from ._widget import (
     GeneralCounter,
     PointBasedDataAnalyticsWidget,
+    CreateROCCurve,
     Threshold,
     segment_by_threshold,
 )
@@ -18,5 +19,6 @@ __all__ = [
     "segment_by_threshold",
     "GeneralCounter",
     "PointBasedDataAnalyticsWidget",
+    "CreateROCCurve",
     "Threshold",
 ]
