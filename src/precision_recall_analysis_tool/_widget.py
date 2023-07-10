@@ -453,7 +453,7 @@ class CreateROCCurve(QWidget):
 
 
                 npImageData = layer_image.data.compute()
-                mask = np.zeros_like(npImageData, dtype=np.bool)
+                mask = np.zeros_like(npImageData, dtype=np.bool_)
 
                 print(layer_image.data)
                 print(npImageData)
