@@ -14,8 +14,8 @@ contributions:
     - id: precision-recall-analysis-tool.pointBasedDataAnalyticsWidget
       python_name: precision_recall_analysis_tool._widget:PointBasedDataAnalyticsWidget
       title: Precision Recall Analysis Widget
-    - id: precision-recall-analysis-tool.createROCCurve
-      python_name: precision_recall_analysis_tool._widget:CreateROCCurve
+    - id: precision-recall-analysis-tool.outlineRegions
+      python_name: precision_recall_analysis_tool._widget:OutlineRegions
       title: Precision Recall Analysis Widget
       
     - id: precision-recall-analysis-tool.make_magic_widget
@@ -33,8 +33,6 @@ contributions:
     - command: precision-recall-analysis-tool.generalCounter
       display_name: 👆🏼 Object Counter
     - command: precision-recall-analysis-tool.pointBasedDataAnalyticsWidget
-      display_name: ⭐️ Data Analytics Widget
-    - command: precision-recall-analysis-tool.createROCCurve
-      display_name: 📈 Create ROC Cuve
-    # - command: precision-recall-analysis-tool.make_magic_widget
-    #   display_name: Segment by Threshold
+      display_name: 🔵 Instance Validator
+    - command: precision-recall-analysis-tool.outlineRegions
+      display_name: 🖍️ Region Outliner

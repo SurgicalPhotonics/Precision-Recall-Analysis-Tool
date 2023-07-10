@@ -8,9 +8,10 @@ Replace code below according to your needs.
 """
 import csv
 from enum import Enum
+from array import *
 from functools import partial
 from typing import Optional
-
+import re
 from skimage import draw
 import dask.array as da
 import napari
@@ -279,22 +280,71 @@ class PointBasedDataAnalyticsWidget(QWidget):
 
         return None
 
-    def getPointsCount(self, pointType: PointType) -> int:
+    def getPointsCount(self, pointType: PointType, polygon) -> int:
+
         layer = self.getPointsLayer(pointType.name.lower())
         if layer is not None:
-            return len(layer.data)
+            if polygon is None:
+                return len(layer.data)
+            else:
+                # Create a Path object from the polygon points
+                poly_path = mplPath.Path(polygon)
+                return np.sum(poly_path.contains_points(layer.data))
+            
+        else:
+            print(f"layer for type {pointType.name} was none")
+            return 0
 
-        print(f"layer for type {pointType.name} was none")
-        return 0
+        
+            
 
+    def getAllSubsectionPolygons(self):
+        layers = []
+        for layer in self.viewer.layers:
+            if isinstance(layer, Shapes) and re.search(r'section\d+_polygon', layer.name):
+                layers.append(layer)
+                print(f"Found Subsection - {layer.name}")
+        return layers
+    
     def peformAnalysis(self):
         print("performing analysis")
+        
+        subsectionLayers = self.getAllSubsectionPolygons()
 
-        tpCount = self.getPointsCount(pointType=PointType.TruePositive)
-        tnCount = self.getPointsCount(pointType=PointType.TrueNegative)
-        fpCount = self.getPointsCount(pointType=PointType.FalsePositive)
-        fnCount = self.getPointsCount(pointType=PointType.FalseNegative)
+        allStatsDicts = []
+        
+        for layer in subsectionLayers:
+            polygons = layer.data
+            if len(polygons) > 0:
+                print(f"{layer.name} had {len(polygons)} polygons")
+                polygonToAnalyze = polygons[0]
+                polygon_TP = self.getPointsCount(pointType=PointType.TruePositive, polygon=polygonToAnalyze)
+                polygon_TN = self.getPointsCount(pointType=PointType.TrueNegative, polygon=polygonToAnalyze)
+                polygon_FP = self.getPointsCount(pointType=PointType.FalsePositive, polygon=polygonToAnalyze)
+                polygon_FN = self.getPointsCount(pointType=PointType.FalseNegative, polygon=polygonToAnalyze)
+                
+                allStatsDicts= allStatsDicts + self.performStatistics(layer.name,
+                                                                      polygon_TP,
+                                                                      polygon_TN,
+                                                                      polygon_FP,
+                                                                      polygon_FN)
+                
+                
+        
+        tpCount = self.getPointsCount(pointType=PointType.TruePositive, polygon=None)
+        tnCount = self.getPointsCount(pointType=PointType.TrueNegative, polygon=None)
+        fpCount = self.getPointsCount(pointType=PointType.FalsePositive, polygon=None)
+        fnCount = self.getPointsCount(pointType=PointType.FalseNegative, polygon=None)
+        
+        allStatsDicts = allStatsDicts + self.performStatistics("Overall Stats",
+                                                               tpCount,
+                                                                tnCount,
+                                                                fpCount,
+                                                                fnCount)
+        
+        self.exportStats(allStatsDicts)
 
+    def performStatistics(self, outputName, tpCount, fpCount, tnCount, fnCount):
         totalPoints = tpCount + fpCount + tnCount + fnCount
 
         precision = tpCount / (tpCount + fpCount)
@@ -319,6 +369,7 @@ class PointBasedDataAnalyticsWidget(QWidget):
         jaccardIndex = tpCount / (tpCount + fnCount + fpCount)
 
         baseStats = {
+            "Stats Section": outputName,
             "True Positive": tpCount,
             "True Negative": tnCount,
             "False Positive": fpCount,
@@ -350,6 +401,9 @@ class PointBasedDataAnalyticsWidget(QWidget):
             print(f"{key}: {value}")
         print("=============================")
 
+        return [baseStats, derivedStats]
+    
+    def exportStats(self, statsDictArray):
         # Open a file save dialog to choose the location to save the CSV file
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
@@ -365,11 +419,11 @@ class PointBasedDataAnalyticsWidget(QWidget):
                 # Iterate over the statistics dictionary and write the key-value pairs as rows
                 writer = csv.writer(csvfile)
                 writer.writerow(["Metric", "Value"])
-                for key, value in baseStats.items():
-                    writer.writerow([key, value])
-                writer.writerow(["", ""])
-                for key, value in derivedStats.items():
-                    writer.writerow([key, value])
+                for statsDict in statsDictArray:
+                    for key, value in statsDict.items():
+                        writer.writerow([key, value])
+                    writer.writerow(["", ""])
+                
 
     def addPointsLayer(self, pointType: PointType):
         new_points_layer = self.viewer.add_points(name=pointType.name)
@@ -385,7 +439,7 @@ class PointBasedDataAnalyticsWidget(QWidget):
                 -1
             ]  # Get the last point in the data array
             print(f"The last point added is at coordinates: {last_point}")
-            totalNumberOfPoints = self.getPointsCount(pointType=pointType)
+            totalNumberOfPoints = self.getPointsCount(pointType=pointType, polygon=None)
             countString = f"{pointType.abbreviation}: {totalNumberOfPoints}"
             print(countString)
             self.changeLabel(named=pointType.name, newValue=countString)
@@ -413,7 +467,7 @@ class PointBasedDataAnalyticsWidget(QWidget):
                 ]
             )
 
-class CreateROCCurve(QWidget):
+class OutlineRegions(QWidget):
     def __init__(self, napari_viewer):
         super().__init__()
         self.viewer = napari_viewer
@@ -470,8 +524,18 @@ class CreateROCCurve(QWidget):
                     else:
                         mask[cc, rr] = True
 
+                isolatedPolygon = self.viewer.add_shapes([polygon],
+                                                         shape_type='polygon',
+                                                         name=f"section{index}_polygon",
+                                                         face_color='#55ffff')
+                isolatedPolygon.opacity = 0.2
+
+
                 sectionedImageData = mask * layer_image.data
-                sectionedImageLayer = self.viewer.add_image(sectionedImageData, name=f'section{index}_image', colormap='green', blending='additive')
+                sectionedImageLayer = self.viewer.add_image(sectionedImageData,
+                                                            name=f'section{index}_image',
+                                                            colormap='green',
+                                                            blending='additive')
                 sectionedImageLayer.gamma = 2
                 sectionedImageLayer.opacity = 0.5
 
