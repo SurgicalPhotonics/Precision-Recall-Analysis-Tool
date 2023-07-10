@@ -16,7 +16,7 @@ import dask.array as da
 import napari
 from magicgui import magic_factory
 import matplotlib.path as mplPath
-from napari.layers import Points, Image, Shapes
+from napari.layers import Points, Image, Shapes, Labels
 
 import numpy as np
 # https://github.com/napari/napari/blob/19f83a2195c55518f7b89146f704021017118679/napari/layers/points/_points_constants.py
@@ -33,6 +33,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+import skimage.draw
 from skimage.filters import (
     threshold_isodata,
     threshold_li,
@@ -417,9 +418,9 @@ class CreateROCCurve(QWidget):
         super().__init__()
         self.viewer = napari_viewer
         self.setLayout(QVBoxLayout())
-        self.addShapesLayerButton = QPushButton("")
+        self.addShapesLayerButton = QPushButton("Select Regions of Interest")
         self.addShapesLayerButton.clicked.connect(lambda: self.addShapesLayer())
-        self.createMasksAndNewLayersButton = QPushButton("Create Section Layers")
+        self.createMasksAndNewLayersButton = QPushButton("Create Masks and Layers")
         self.createMasksAndNewLayersButton.clicked.connect(lambda: self.createMasksAndNewLayers())
         self.layout().addWidget(self.addShapesLayerButton)
         self.layout().addWidget(self.createMasksAndNewLayersButton)
@@ -433,6 +434,7 @@ class CreateROCCurve(QWidget):
     def createMasksAndNewLayers(self):
         layer_image = self.getImageLayer(named="raw")
         layer_polygon = self.getShapesLayer(named="SectionMaskShapes")
+        layer_mask = self.getLabelsLayer(named="mask")
 
         if layer_image is not None and layer_polygon is not None:
             # Add shape layer with rectangle
@@ -449,34 +451,36 @@ class CreateROCCurve(QWidget):
                 x_min, y_min = np.min(polygon, axis=0)
                 x_max, y_max = np.max(polygon, axis=0)
 
-                # Create a mask of the same size as the input image
-                mask = np.zeros_like(layer_image.data, dtype=np.bool)
+
+                npImageData = layer_image.data.compute()
+                mask = np.zeros_like(npImageData, dtype=np.bool)
+
                 print(layer_image.data)
+                print(npImageData)
                 print(mask)
-                print(".......")
-
-                # Iterate over the pixels inside the bounding box of the polygon
-                counter = 0
+                print(".........")
                 zRange = polygon.ndim
-                yRange = range(int(y_min), int(y_max) + 1)
-                xRange = range(int(x_min), int(x_max) + 1)
+                
+                rr, cc = skimage.draw.polygon(polygon[:, 1], polygon[:, 0])
+                rr = np.clip(rr, int(y_min), int(y_max)).astype(int)
+                cc = np.clip(cc, int(x_min), int(x_max)).astype(int)
                 for z in range(zRange):
-                    for i in yRange:
-                        for j in xRange:
-                            print(i)
-                            print(j)
-                            counter += 1
-                            print(f"{counter}/{(y_max - y_min) * (x_max - x_min) * zRange}")
-                            if poly_path.contains_point((j, i)):
-                                mask[z, j, i] = True
+                    if z > 1:
+                        mask[z, cc, rr] = True
+                    else:
+                        mask[cc, rr] = True
 
-                print("Done Calc")
-                masked_data = mask * layer_image.data
-                masked_layer = self.viewer.add_image(masked_data, name=f'section_{index}', colormap='green', blending='additive')
-                masked_layer.gamma = 2
-                masked_layer.opacity = 0.5
+                sectionedImageData = mask * layer_image.data
+                sectionedImageLayer = self.viewer.add_image(sectionedImageData, name=f'section{index}_image', colormap='green', blending='additive')
+                sectionedImageLayer.gamma = 2
+                sectionedImageLayer.opacity = 0.5
+
+                sectionedMaskData = mask * layer_mask.data
+                sectionedMaskLayer = self.viewer.add_labels(sectionedMaskData, name=f'section{index}_mask')
+
                 layer_polygon.visible = False
-                layer_polygon.visible = False
+                layer_mask.visible = False
+                layer_image.visible = False
 
     def getImageLayer(self, named: str) -> Optional[Image]:
         for layer in self.viewer.layers:
@@ -488,6 +492,13 @@ class CreateROCCurve(QWidget):
     def getShapesLayer(self, named: str) -> Optional[Image]:
         for layer in self.viewer.layers:
             if layer.name.lower() == named.lower() and isinstance(layer, Shapes):
+                return layer
+
+        return None
+    
+    def getLabelsLayer(self, named: str) -> Optional[Points]:
+        for layer in self.viewer.layers:
+            if layer.name.lower() == named and isinstance(layer, Labels):
                 return layer
 
         return None
