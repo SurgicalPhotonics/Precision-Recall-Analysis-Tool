@@ -133,7 +133,7 @@ class GeneralCounter(QWidget):
 
     def addPointsLayer(self, pointType: PointType):
         new_points_layer = self.viewer.add_points(name=pointType.name)
-        new_points_layer.mode = Mode.ADD
+        new_points_layer.mode = 'add'
         new_points_layer.face_color = pointType.color
         new_points_layer.current_face_color = pointType.color
         new_points_layer.symbol = "disc"
@@ -372,7 +372,7 @@ class PointBasedDataAnalyticsWidget(QWidget):
 
     def addPointsLayer(self, pointType: PointType):
         new_points_layer = self.viewer.add_points(name=pointType.name)
-        new_points_layer.mode = Mode.ADD
+        new_points_layer.mode = 'add'
         new_points_layer.face_color = pointType.color
         new_points_layer.current_face_color = pointType.color
         new_points_layer.symbol = "disc"
