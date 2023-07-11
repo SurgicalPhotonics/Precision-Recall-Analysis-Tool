@@ -17,10 +17,6 @@ contributions:
     - id: precision-recall-analysis-tool.outlineRegions
       python_name: precision_recall_analysis_tool._widget:OutlineRegions
       title: Precision Recall Analysis Widget
-      
-    - id: precision-recall-analysis-tool.make_magic_widget
-      python_name: precision_recall_analysis_tool._widget:segment_by_threshold
-      title: Make segmentation by threshold widget
   readers:
     - command: precision-recall-analysis-tool.get_reader
       accepts_directories: true

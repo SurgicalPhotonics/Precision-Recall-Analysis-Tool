@@ -9,14 +9,12 @@ from ._widget import (
     PointBasedDataAnalyticsWidget,
     OutlineRegions,
     Threshold,
-    segment_by_threshold,
 )
 from ._writer import write_single_image
 
 __all__ = [
     "napari_get_reader",
     "write_single_image",
-    "segment_by_threshold",
     "GeneralCounter",
     "PointBasedDataAnalyticsWidget",
     "OutlineRegions",

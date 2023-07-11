@@ -58,14 +58,12 @@ class Threshold(Enum):
 class PointSelectionState(Enum):
     noState = 0
     addingTP = 1
-    addingTN = 2
     addingFP = 3
     addingFN = 4
 
 
 class PointType(Enum):
     TruePositive = 0
-    TrueNegative = 1
     FalsePositive = 2
     FalseNegative = 3
     CounterItem = 4
@@ -74,8 +72,6 @@ class PointType(Enum):
     def abbreviation(self):
         if self == PointType.TruePositive:
             return "TP"
-        elif self == PointType.TrueNegative:
-            return "TN"
         elif self == PointType.FalsePositive:
             return "FP"
         elif self == PointType.FalseNegative:
@@ -87,8 +83,6 @@ class PointType(Enum):
     def color(self):
         if self == PointType.TruePositive:
             return "green"
-        elif self == PointType.TrueNegative:
-            return "lightgreen"
         elif self == PointType.FalsePositive:
             return "orange"
         elif self == PointType.FalseNegative:
@@ -110,30 +104,29 @@ class GeneralCounter(QWidget):
         self.layout().addWidget(self.totalCountLabel)
 
         self.startCountingButton = QPushButton("Begin Counting")
-        self.startCountingButton.clicked.connect(lambda: self.startCounting())
+        self.startCountingButton.clicked.connect(self.startCounting)
         self.layout().addWidget(self.startCountingButton)
         self.layout().addStretch()
 
     def startCounting(self):
+        """Start counting and hide button, add 'CounterItem' points layer."""
         self.startCountingButton.hide()
         self.addPointsLayer(pointType=PointType.CounterItem)
 
     def getPointsLayer(self, named: str) -> Optional[Points]:
+        """Return first 'Points' type layer matching given name."""
         for layer in self.viewer.layers:
             if layer.name.lower() == named and isinstance(layer, Points):
                 return layer
-
         return None
 
     def getPointsCount(self, pointType: PointType) -> int:
+        """Return number of points in layer with given point type or 0 if layer not found."""
         layer = self.getPointsLayer(pointType.name.lower())
-        if layer is not None:
-            return len(layer.data)
-
-        print(f"layer for type {pointType.name} was none")
-        return 0
+        return len(layer.data) if layer is not None else 0
 
     def addPointsLayer(self, pointType: PointType):
+        """Add a new 'Points' type layer and register 'printCoordinates' callback."""
         new_points_layer = self.viewer.add_points(name=pointType.name)
         new_points_layer.mode = 'add'
         new_points_layer.face_color = pointType.color
@@ -143,30 +136,18 @@ class GeneralCounter(QWidget):
         new_points_layer.current_size = 10
 
         def printCoordinates(event):
-            last_point = event.source.data[
-                -1
-            ]  # Get the last point in the data array
-            print(f"The last point added is at coordinates: {last_point}")
+            last_point = event.source.data[-1]
             totalNumberOfPoints = len(event.source.data)
             countString = f"Count: {totalNumberOfPoints}"
-            print(countString)
             self.totalCountLabel.setText(countString)
 
-        new_points_layer.events.data.connect(
-            printCoordinates
-        )  # Connect the callback function
+        new_points_layer.events.data.connect(printCoordinates)
 
     def _reset_layer_options(self, event):
+        """Reset layer options for each combo in self.layer_combos."""
         for combo in self.layer_combos:
             combo.clear()
-            combo.addItems(
-                [
-                    layer.name
-                    for layer in self.viewer.layers
-                    if isinstance(layer, Points)
-                ]
-            )
-
+            combo.addItems([layer.name for layer in self.viewer.layers if isinstance(layer, Points)])
 
 class PointBasedDataAnalyticsWidget(QWidget):
     def __init__(self, napari_viewer):
@@ -186,10 +167,6 @@ class PointBasedDataAnalyticsWidget(QWidget):
         self.topFPLabel.setObjectName(PointType.FalsePositive.name)
         self.layout().addWidget(self.topFPLabel)
 
-        self.topTNLabel = QLabel(f"TN: {0}")
-        self.topTNLabel.setObjectName(PointType.TrueNegative.name)
-        self.layout().addWidget(self.topTNLabel)
-
         self.topFNLabel = QLabel(f"FN: {0}")
         self.topFNLabel.setObjectName(PointType.FalseNegative.name)
         self.layout().addWidget(self.topFNLabel)
@@ -199,13 +176,6 @@ class PointBasedDataAnalyticsWidget(QWidget):
             lambda: self.changeState(newState=PointSelectionState.addingTP)
         )
         self.layout().addWidget(self.start_adding_tp_btn)
-
-        self.start_adding_tn_btn = QPushButton("Begin Adding True Negatives")
-        self.start_adding_tn_btn.clicked.connect(
-            lambda: self.changeState(newState=PointSelectionState.addingTN)
-        )
-        self.layout().addWidget(self.start_adding_tn_btn)
-        self.start_adding_tn_btn.hide()
 
         self.start_adding_fp_btn = QPushButton("Begin Adding False Positives")
         self.start_adding_fp_btn.clicked.connect(
@@ -252,13 +222,8 @@ class PointBasedDataAnalyticsWidget(QWidget):
             print("State is none")
         elif self.state == PointSelectionState.addingTP:
             self.start_adding_tp_btn.hide()
-            self.start_adding_tn_btn.show()
-            self.addPointsLayer(pointType=PointType.TruePositive)
-
-        elif self.state == PointSelectionState.addingTN:
-            self.start_adding_tn_btn.hide()
             self.start_adding_fp_btn.show()
-            self.addPointsLayer(pointType=PointType.TrueNegative)
+            self.addPointsLayer(pointType=PointType.TruePositive)
 
         elif self.state == PointSelectionState.addingFP:
             self.start_adding_fp_btn.hide()
@@ -295,9 +260,6 @@ class PointBasedDataAnalyticsWidget(QWidget):
             print(f"layer for type {pointType.name} was none")
             return 0
 
-        
-            
-
     def getAllSubsectionPolygons(self):
         layers = []
         for layer in self.viewer.layers:
@@ -319,78 +281,59 @@ class PointBasedDataAnalyticsWidget(QWidget):
                 print(f"{layer.name} had {len(polygons)} polygons")
                 polygonToAnalyze = polygons[0]
                 polygon_TP = self.getPointsCount(pointType=PointType.TruePositive, polygon=polygonToAnalyze)
-                polygon_TN = self.getPointsCount(pointType=PointType.TrueNegative, polygon=polygonToAnalyze)
                 polygon_FP = self.getPointsCount(pointType=PointType.FalsePositive, polygon=polygonToAnalyze)
                 polygon_FN = self.getPointsCount(pointType=PointType.FalseNegative, polygon=polygonToAnalyze)
                 
                 allStatsDicts= allStatsDicts + self.performStatistics(layer.name,
                                                                       polygon_TP,
-                                                                      polygon_TN,
                                                                       polygon_FP,
                                                                       polygon_FN)
-                
-                
         
         tpCount = self.getPointsCount(pointType=PointType.TruePositive, polygon=None)
-        tnCount = self.getPointsCount(pointType=PointType.TrueNegative, polygon=None)
         fpCount = self.getPointsCount(pointType=PointType.FalsePositive, polygon=None)
         fnCount = self.getPointsCount(pointType=PointType.FalseNegative, polygon=None)
         
         allStatsDicts = allStatsDicts + self.performStatistics("Overall Stats",
                                                                tpCount,
-                                                                tnCount,
                                                                 fpCount,
                                                                 fnCount)
         
         self.exportStats(allStatsDicts)
 
-    def performStatistics(self, outputName, tpCount, fpCount, tnCount, fnCount):
-        totalPoints = tpCount + fpCount + tnCount + fnCount
+    def performStatistics(self, outputName, tpCount, fpCount, fnCount):
+        totalPoints = tpCount + fpCount + fnCount
 
         precision = tpCount / (tpCount + fpCount)
         recall = tpCount / (tpCount + fnCount)
         fScore = 2 * ((precision * recall) / (precision + recall))
-        accuracy = 100 * ((tpCount + tnCount) / (totalPoints))
+        accuracy = 100 * ((tpCount + fpCount) / (tpCount + fnCount)) # Note this is an approximation of accuracy as outlined in this paper: https://www.aivia-software.com/post/precision-recall-analysis-of-peripheral-nerve-myelinated-axon-counting-pipeline
 
         actuallyPostitive = tpCount + fnCount
-        actuallyNegative = fpCount + tnCount
         predictedPositive = tpCount + fpCount
-        predictedNegative = tnCount + fnCount
-
-        fpr = fpCount / actuallyNegative
         tpr = tpCount / actuallyPostitive
-        tnr = tnCount / actuallyNegative
+        
         fnr = fnCount / actuallyPostitive
-        pLR = tpr / fpr
-        nLR = fnr / tnr
+        
         ppv = tpCount / predictedPositive
-        npv = tnCount / predictedNegative
-        markedness = ppv + npv - 1
+        
         jaccardIndex = tpCount / (tpCount + fnCount + fpCount)
 
         baseStats = {
             "Stats Section": outputName,
             "True Positive": tpCount,
-            "True Negative": tnCount,
             "False Positive": fpCount,
             "False Negative": fnCount,
         }
+
         derivedStats = {
             "Precision": precision,
             "Accuracy": accuracy,
             "Recall": recall,
             "F-Score": fScore,
             "True Positive Rate": tpr,
-            "False Positive Rate": fpr,
-            "True Negative Rate": tnr,
             "False Negative Rate": fnr,
-            "Positive Likelihood Ratio": pLR,
-            "Negative Likelihood Ratio": nLR,
             "Positive Predictive Value": ppv,
-            "Negative Predictive Value": npv,
-            "Markedness": markedness,
             "Jaccard Index": jaccardIndex
-            # "Matthews correlation coefficient": ,
         }
 
         print("=============================")
@@ -491,11 +434,6 @@ class OutlineRegions(QWidget):
         layer_mask = self.getLabelsLayer(named="mask")
 
         if layer_image is not None and layer_polygon is not None:
-            # Add shape layer with rectangle
-            # polygon1 = np.array([[20, 20], [60, 20], [70, 50], [50, 80], [30, 50]])
-            # polygon2 = np.array([[120, 120], [160, 120], [170, 150], [150, 180], [130, 150]])
-            # polygons = [polygon1, polygon2]
-            # layer_polygon = self.viewer.add_shapes(polygons, shape_type='polygon', edge_width=1, edge_color='coral', face_color='royalblue', name='shapes')
             polygons = layer_polygon.data
             for index, polygon in enumerate(polygons):
                 # Create a Path object from the polygon points
@@ -504,7 +442,6 @@ class OutlineRegions(QWidget):
                 # Calculate the bounds of the polygon
                 x_min, y_min = np.min(polygon, axis=0)
                 x_max, y_max = np.max(polygon, axis=0)
-
 
                 npImageData = layer_image.data.compute()
                 mask = np.zeros_like(npImageData, dtype=np.bool_)
@@ -530,7 +467,6 @@ class OutlineRegions(QWidget):
                                                          face_color='#55ffff')
                 isolatedPolygon.opacity = 0.2
 
-
                 sectionedImageData = mask * layer_image.data
                 sectionedImageLayer = self.viewer.add_image(sectionedImageData,
                                                             name=f'section{index}_image',
@@ -541,6 +477,7 @@ class OutlineRegions(QWidget):
 
                 sectionedMaskData = mask * layer_mask.data
                 sectionedMaskLayer = self.viewer.add_labels(sectionedMaskData, name=f'section{index}_mask')
+                sectionedMaskLayer.opacity = 0.8
 
                 layer_polygon.visible = False
                 layer_mask.visible = False
@@ -566,18 +503,3 @@ class OutlineRegions(QWidget):
                 return layer
 
         return None
-
-
-@magic_factory
-def segment_by_threshold(
-    img_layer: "napari.layers.Image", threshold: Threshold
-) -> "napari.types.LayerDataTuple":
-    with progress(total=0):
-        # need to use threshold.value to get the function from the enum member
-        threshold_val = threshold.value(img_layer.data.compute())
-        binarised_im = img_layer.data > threshold_val
-        seg_labels = da.from_array(label(binarised_im))
-
-    seg_layer = (seg_labels, {"name": f"{img_layer.name}_seg"}, "labels")
-
-    return seg_layer
