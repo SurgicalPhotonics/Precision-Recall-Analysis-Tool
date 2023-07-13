@@ -14,9 +14,6 @@ contributions:
     - id: precision-recall-analysis-tool.pointBasedDataAnalyticsWidget
       python_name: precision_recall_analysis_tool._widget:PointBasedDataAnalyticsWidget
       title: Precision Recall Analysis Widget
-    - id: precision-recall-analysis-tool.outlineRegions
-      python_name: precision_recall_analysis_tool._widget:OutlineRegions
-      title: Precision Recall Analysis Widget
   readers:
     - command: precision-recall-analysis-tool.get_reader
       accepts_directories: true
@@ -30,5 +27,3 @@ contributions:
       display_name: 👆🏼 Object Counter
     - command: precision-recall-analysis-tool.pointBasedDataAnalyticsWidget
       display_name: 🔵 Instance Validator
-    - command: precision-recall-analysis-tool.outlineRegions
-      display_name: 🖍️ Region Outliner

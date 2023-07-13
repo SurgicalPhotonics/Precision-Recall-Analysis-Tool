@@ -31,8 +31,10 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QFrame,
     QVBoxLayout,
     QWidget,
+    QCheckBox,
 )
 import skimage.draw
 from skimage.filters import (
@@ -102,6 +104,14 @@ class GeneralCounter(QWidget):
 
         self.totalCountLabel = QLabel(f"Count: {0}")
         self.layout().addWidget(self.totalCountLabel)
+        divider = makeDivider()
+        self.layout().addWidget(divider)
+        self.addShapesLayerButton = QPushButton("Select Regions of Interest")
+        self.addShapesLayerButton.clicked.connect(lambda: addShapesLayer(self))
+        self.createMasksAndNewLayersButton = QPushButton("Create Masks and Layers")
+        self.createMasksAndNewLayersButton.clicked.connect(lambda: createMasksAndNewLayers(self))
+        self.layout().addWidget(self.addShapesLayerButton)
+        self.layout().addWidget(self.createMasksAndNewLayersButton)
 
         self.startCountingButton = QPushButton("Begin Counting")
         self.startCountingButton.clicked.connect(self.startCounting)
@@ -112,18 +122,6 @@ class GeneralCounter(QWidget):
         """Start counting and hide button, add 'CounterItem' points layer."""
         self.startCountingButton.hide()
         self.addPointsLayer(pointType=PointType.CounterItem)
-
-    def getPointsLayer(self, named: str) -> Optional[Points]:
-        """Return first 'Points' type layer matching given name."""
-        for layer in self.viewer.layers:
-            if layer.name.lower() == named and isinstance(layer, Points):
-                return layer
-        return None
-
-    def getPointsCount(self, pointType: PointType) -> int:
-        """Return number of points in layer with given point type or 0 if layer not found."""
-        layer = self.getPointsLayer(pointType.name.lower())
-        return len(layer.data) if layer is not None else 0
 
     def addPointsLayer(self, pointType: PointType):
         """Add a new 'Points' type layer and register 'printCoordinates' callback."""
@@ -195,6 +193,15 @@ class PointBasedDataAnalyticsWidget(QWidget):
         self.peformAnalysisButton.clicked.connect(self.peformAnalysis)
         self.layout().addWidget(self.peformAnalysisButton)
         self.peformAnalysisButton.hide()
+        divider = makeDivider()
+        self.layout().addWidget(divider)
+        self.addShapesLayerButton = QPushButton("Select Regions of Interest")
+        self.addShapesLayerButton.clicked.connect(lambda: addShapesLayer(self))
+        self.createMasksAndNewLayersButton = QPushButton("Create Masks and Layers")
+        self.createMasksAndNewLayersButton.clicked.connect(lambda: createMasksAndNewLayers(self))
+        self.layout().addWidget(self.addShapesLayerButton)
+        self.layout().addWidget(self.createMasksAndNewLayersButton)
+
         self.layout().addStretch()
 
     def add_points_combo_box(self, label_text):
@@ -238,28 +245,6 @@ class PointBasedDataAnalyticsWidget(QWidget):
         else:
             print("Unknown State")
 
-    def getPointsLayer(self, named: str) -> Optional[Points]:
-        for layer in self.viewer.layers:
-            if layer.name.lower() == named and isinstance(layer, Points):
-                return layer
-
-        return None
-
-    def getPointsCount(self, pointType: PointType, polygon) -> int:
-
-        layer = self.getPointsLayer(pointType.name.lower())
-        if layer is not None:
-            if polygon is None:
-                return len(layer.data)
-            else:
-                # Create a Path object from the polygon points
-                poly_path = mplPath.Path(polygon)
-                return np.sum(poly_path.contains_points(layer.data))
-            
-        else:
-            print(f"layer for type {pointType.name} was none")
-            return 0
-
     def getAllSubsectionPolygons(self):
         layers = []
         for layer in self.viewer.layers:
@@ -280,18 +265,18 @@ class PointBasedDataAnalyticsWidget(QWidget):
             if len(polygons) > 0:
                 print(f"{layer.name} had {len(polygons)} polygons")
                 polygonToAnalyze = polygons[0]
-                polygon_TP = self.getPointsCount(pointType=PointType.TruePositive, polygon=polygonToAnalyze)
-                polygon_FP = self.getPointsCount(pointType=PointType.FalsePositive, polygon=polygonToAnalyze)
-                polygon_FN = self.getPointsCount(pointType=PointType.FalseNegative, polygon=polygonToAnalyze)
+                polygon_TP = getPointsCount(self=self, pointType=PointType.TruePositive, polygon=polygonToAnalyze)
+                polygon_FP = getPointsCount(self=self, pointType=PointType.FalsePositive, polygon=polygonToAnalyze)
+                polygon_FN = getPointsCount(self=self, pointType=PointType.FalseNegative, polygon=polygonToAnalyze)
                 
                 allStatsDicts= allStatsDicts + self.performStatistics(layer.name,
                                                                       polygon_TP,
                                                                       polygon_FP,
                                                                       polygon_FN)
         
-        tpCount = self.getPointsCount(pointType=PointType.TruePositive, polygon=None)
-        fpCount = self.getPointsCount(pointType=PointType.FalsePositive, polygon=None)
-        fnCount = self.getPointsCount(pointType=PointType.FalseNegative, polygon=None)
+        tpCount = getPointsCount(self=self, pointType=PointType.TruePositive, polygon=None)
+        fpCount = getPointsCount(self=self, pointType=PointType.FalsePositive, polygon=None)
+        fnCount = getPointsCount(self=self, pointType=PointType.FalseNegative, polygon=None)
         
         allStatsDicts = allStatsDicts + self.performStatistics("Overall Stats",
                                                                tpCount,
@@ -307,14 +292,6 @@ class PointBasedDataAnalyticsWidget(QWidget):
         recall = tpCount / (tpCount + fnCount)
         fScore = 2 * ((precision * recall) / (precision + recall))
         accuracy = 100 * ((tpCount + fpCount) / (tpCount + fnCount)) # Note this is an approximation of accuracy as outlined in this paper: https://www.aivia-software.com/post/precision-recall-analysis-of-peripheral-nerve-myelinated-axon-counting-pipeline
-
-        actuallyPostitive = tpCount + fnCount
-        predictedPositive = tpCount + fpCount
-        tpr = tpCount / actuallyPostitive
-        
-        fnr = fnCount / actuallyPostitive
-        
-        ppv = tpCount / predictedPositive
         
         jaccardIndex = tpCount / (tpCount + fnCount + fpCount)
 
@@ -327,12 +304,9 @@ class PointBasedDataAnalyticsWidget(QWidget):
 
         derivedStats = {
             "Precision": precision,
-            "Accuracy": accuracy,
             "Recall": recall,
             "F-Score": fScore,
-            "True Positive Rate": tpr,
-            "False Negative Rate": fnr,
-            "Positive Predictive Value": ppv,
+            "Accuracy": accuracy,
             "Jaccard Index": jaccardIndex
         }
 
@@ -382,7 +356,7 @@ class PointBasedDataAnalyticsWidget(QWidget):
                 -1
             ]  # Get the last point in the data array
             print(f"The last point added is at coordinates: {last_point}")
-            totalNumberOfPoints = self.getPointsCount(pointType=pointType, polygon=None)
+            totalNumberOfPoints = getPointsCount(self=self, pointType=pointType, polygon=None)
             countString = f"{pointType.abbreviation}: {totalNumberOfPoints}"
             print(countString)
             self.changeLabel(named=pointType.name, newValue=countString)
@@ -410,96 +384,139 @@ class PointBasedDataAnalyticsWidget(QWidget):
                 ]
             )
 
-class OutlineRegions(QWidget):
-    def __init__(self, napari_viewer):
-        super().__init__()
-        self.viewer = napari_viewer
-        self.setLayout(QVBoxLayout())
-        self.addShapesLayerButton = QPushButton("Select Regions of Interest")
-        self.addShapesLayerButton.clicked.connect(lambda: self.addShapesLayer())
-        self.createMasksAndNewLayersButton = QPushButton("Create Masks and Layers")
-        self.createMasksAndNewLayersButton.clicked.connect(lambda: self.createMasksAndNewLayers())
-        self.layout().addWidget(self.addShapesLayerButton)
-        self.layout().addWidget(self.createMasksAndNewLayersButton)
-        self.layout().addStretch()
+def getLayer(self, named=str):
+    for layer in self.viewer.layers:
+        if layer.name == named:
+            return layer
+    return None
 
-    def addShapesLayer(self):
-        maskDrawingLayer = self.viewer.add_shapes(name="SectionMaskShapes")
+def selectLayer(self, named=str):
+    existingLayer = getLayer(self=self, named=named)
+    if existingLayer is not None:    
+        for layer in self.viewer.layers:
+            if layer.name != named:
+                layer.isSelected = False
+            else:
+                print("Found Layer")
+                self.viewer.layers.selection = [layer]
+        return existingLayer
+    else:
+        return None
+
+def addShapesLayer(self):
+    layerName = "SectionMaskShapes"
+    existingShapeLayer = selectLayer(self=self, named=layerName)
+    if existingShapeLayer is None:
+        maskDrawingLayer = self.viewer.add_shapes(name=layerName)
         maskDrawingLayer.mode = Mode.ADD_POLYGON
+    else:
+        existingShapeLayer.mode = Mode.ADD_POLYGON
+        existingShapeLayer.visible = True
+        getImageLayer(self=self, named="raw").visible = True
+        getLabelsLayer(self=self,named="mask").visible = True
 
 
-    def createMasksAndNewLayers(self):
-        layer_image = self.getImageLayer(named="raw")
-        layer_polygon = self.getShapesLayer(named="SectionMaskShapes")
-        layer_mask = self.getLabelsLayer(named="mask")
+def createMasksAndNewLayers(self):
+    layer_image = getImageLayer(self=self, named="raw")
+    layer_polygon = getShapesLayer(self=self,named="SectionMaskShapes")
+    layer_mask = getLabelsLayer(self=self,named="mask")
 
-        if layer_image is not None and layer_polygon is not None:
-            polygons = layer_polygon.data
-            for index, polygon in enumerate(polygons):
+    if layer_image is not None and layer_polygon is not None:
+        polygons = layer_polygon.data
+        for index, polygon in enumerate(polygons):
+            # Create a Path object from the polygon points
+            poly_path = mplPath.Path(polygon)
+            
+            # Calculate the bounds of the polygon
+            x_min, y_min = np.min(polygon, axis=0)
+            x_max, y_max = np.max(polygon, axis=0)
+
+            npImageData = layer_image.data.compute()
+            mask = np.zeros_like(npImageData, dtype=np.bool_)
+
+            print(layer_image.data)
+            print(npImageData)
+            print(mask)
+            print(".........")
+            zRange = polygon.ndim
+            
+            rr, cc = skimage.draw.polygon(polygon[:, 1], polygon[:, 0])
+            rr = np.clip(rr, int(y_min), int(y_max)).astype(int)
+            cc = np.clip(cc, int(x_min), int(x_max)).astype(int)
+            for z in range(zRange):
+                if z > 1:
+                    mask[z, cc, rr] = True
+                else:
+                    mask[cc, rr] = True
+
+            isolatedPolygon = self.viewer.add_shapes([polygon],
+                                                        shape_type='polygon',
+                                                        name=f"section{index}_polygon",
+                                                        face_color='#55ffff')
+            isolatedPolygon.opacity = 0.2
+
+            sectionedImageData = mask * layer_image.data
+            sectionedImageLayer = self.viewer.add_image(sectionedImageData,
+                                                        name=f'section{index}_image',
+                                                        colormap='green',
+                                                        blending='additive')
+            sectionedImageLayer.gamma = 2
+            sectionedImageLayer.opacity = 0.5
+
+            sectionedMaskData = mask * layer_mask.data
+            sectionedMaskLayer = self.viewer.add_labels(sectionedMaskData, name=f'section{index}_mask')
+            sectionedMaskLayer.opacity = 0.8
+
+            layer_polygon.visible = False
+            layer_mask.visible = False
+            layer_image.visible = False
+
+def getPointsCount(self, pointType: PointType, polygon) -> int:
+
+        layer = getPointsLayer(self=self, named=pointType.name.lower())
+        if layer is not None:
+            if polygon is None:
+                return len(layer.data)
+            else:
                 # Create a Path object from the polygon points
                 poly_path = mplPath.Path(polygon)
-                
-                # Calculate the bounds of the polygon
-                x_min, y_min = np.min(polygon, axis=0)
-                x_max, y_max = np.max(polygon, axis=0)
-
-                npImageData = layer_image.data.compute()
-                mask = np.zeros_like(npImageData, dtype=np.bool_)
-
-                print(layer_image.data)
-                print(npImageData)
-                print(mask)
-                print(".........")
-                zRange = polygon.ndim
-                
-                rr, cc = skimage.draw.polygon(polygon[:, 1], polygon[:, 0])
-                rr = np.clip(rr, int(y_min), int(y_max)).astype(int)
-                cc = np.clip(cc, int(x_min), int(x_max)).astype(int)
-                for z in range(zRange):
-                    if z > 1:
-                        mask[z, cc, rr] = True
-                    else:
-                        mask[cc, rr] = True
-
-                isolatedPolygon = self.viewer.add_shapes([polygon],
-                                                         shape_type='polygon',
-                                                         name=f"section{index}_polygon",
-                                                         face_color='#55ffff')
-                isolatedPolygon.opacity = 0.2
-
-                sectionedImageData = mask * layer_image.data
-                sectionedImageLayer = self.viewer.add_image(sectionedImageData,
-                                                            name=f'section{index}_image',
-                                                            colormap='green',
-                                                            blending='additive')
-                sectionedImageLayer.gamma = 2
-                sectionedImageLayer.opacity = 0.5
-
-                sectionedMaskData = mask * layer_mask.data
-                sectionedMaskLayer = self.viewer.add_labels(sectionedMaskData, name=f'section{index}_mask')
-                sectionedMaskLayer.opacity = 0.8
-
-                layer_polygon.visible = False
-                layer_mask.visible = False
-                layer_image.visible = False
-
-    def getImageLayer(self, named: str) -> Optional[Image]:
+                return np.sum(poly_path.contains_points(layer.data))
+            
+        else:
+            print(f"layer for type {pointType.name} was none")
+            return 0
+        
+def getPointsLayer(self, named: str) -> Optional[Points]:
+        """Return first 'Points' type layer matching given name."""
         for layer in self.viewer.layers:
-            if layer.name.lower() == named.lower() and isinstance(layer, Image):
+            if layer.name.lower() == named and isinstance(layer, Points):
                 return layer
-
         return None
-    
-    def getShapesLayer(self, named: str) -> Optional[Image]:
-        for layer in self.viewer.layers:
-            if layer.name.lower() == named.lower() and isinstance(layer, Shapes):
-                return layer
 
-        return None
-    
-    def getLabelsLayer(self, named: str) -> Optional[Points]:
-        for layer in self.viewer.layers:
-            if layer.name.lower() == named and isinstance(layer, Labels):
-                return layer
+def getImageLayer(self, named: str) -> Optional[Image]:
+    for layer in self.viewer.layers:
+        if layer.name.lower() == named.lower() and isinstance(layer, Image):
+            return layer
 
-        return None
+    return None
+
+def getShapesLayer(self, named: str) -> Optional[Image]:
+    for layer in self.viewer.layers:
+        if layer.name.lower() == named.lower() and isinstance(layer, Shapes):
+            return layer
+
+    return None
+
+def getLabelsLayer(self, named: str) -> Optional[Points]:
+    for layer in self.viewer.layers:
+        if layer.name.lower() == named and isinstance(layer, Labels):
+            return layer
+
+    return None
+
+def makeDivider():
+
+    divider = QFrame()
+    divider.setFrameShape(QFrame.HLine)
+    divider.setFrameShadow(QFrame.Sunken)
+    return divider
