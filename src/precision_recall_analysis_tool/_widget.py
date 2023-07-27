@@ -112,15 +112,7 @@ class GeneralCounter(QWidget):
         self.createMasksAndNewLayersButton.clicked.connect(lambda: createMasksAndNewLayers(self))
         self.layout().addWidget(self.addShapesLayerButton)
         self.layout().addWidget(self.createMasksAndNewLayersButton)
-
-        self.startCountingButton = QPushButton("Begin Counting")
-        self.startCountingButton.clicked.connect(self.startCounting)
-        self.layout().addWidget(self.startCountingButton)
         self.layout().addStretch()
-
-    def startCounting(self):
-        """Start counting and hide button, add 'CounterItem' points layer."""
-        self.startCountingButton.hide()
         self.addPointsLayer(pointType=PointType.CounterItem)
 
     def addPointsLayer(self, pointType: PointType):
@@ -150,7 +142,6 @@ class GeneralCounter(QWidget):
 class PointBasedDataAnalyticsWidget(QWidget):
     def __init__(self, napari_viewer):
         super().__init__()
-        self.state = PointSelectionState.noState
         self.layer_combos = []
         self.viewer = napari_viewer
         self.setLayout(QVBoxLayout())
@@ -169,30 +160,10 @@ class PointBasedDataAnalyticsWidget(QWidget):
         self.topFNLabel.setObjectName(PointType.FalseNegative.name)
         self.layout().addWidget(self.topFNLabel)
 
-        self.start_adding_tp_btn = QPushButton("Begin Adding True Positives")
-        self.start_adding_tp_btn.clicked.connect(
-            lambda: self.changeState(newState=PointSelectionState.addingTP)
-        )
-        self.layout().addWidget(self.start_adding_tp_btn)
-
-        self.start_adding_fp_btn = QPushButton("Begin Adding False Positives")
-        self.start_adding_fp_btn.clicked.connect(
-            lambda: self.changeState(newState=PointSelectionState.addingFP)
-        )
-        self.layout().addWidget(self.start_adding_fp_btn)
-        self.start_adding_fp_btn.hide()
-
-        self.start_adding_fn_btn = QPushButton("Begin Adding False Negatives")
-        self.start_adding_fn_btn.clicked.connect(
-            lambda: self.changeState(newState=PointSelectionState.addingFN)
-        )
-        self.layout().addWidget(self.start_adding_fn_btn)
-        self.start_adding_fn_btn.hide()
-
         self.peformAnalysisButton = QPushButton("Perform Statistics")
         self.peformAnalysisButton.clicked.connect(self.peformAnalysis)
         self.layout().addWidget(self.peformAnalysisButton)
-        self.peformAnalysisButton.hide()
+        # self.peformAnalysisButton.hide()
         divider = makeDivider()
         self.layout().addWidget(divider)
         self.addShapesLayerButton = QPushButton("Select Regions of Interest")
@@ -201,6 +172,10 @@ class PointBasedDataAnalyticsWidget(QWidget):
         self.createMasksAndNewLayersButton.clicked.connect(lambda: createMasksAndNewLayers(self))
         self.layout().addWidget(self.addShapesLayerButton)
         self.layout().addWidget(self.createMasksAndNewLayersButton)
+
+        self.addPointsLayer(pointType=PointType.TruePositive)
+        self.addPointsLayer(pointType=PointType.FalsePositive)
+        self.addPointsLayer(pointType=PointType.FalseNegative)
 
         self.layout().addStretch()
 
@@ -223,28 +198,6 @@ class PointBasedDataAnalyticsWidget(QWidget):
         self.layout().addWidget(combo_row)
         return new_layer_combo
 
-    def changeState(self, newState: PointSelectionState):
-        self.state = newState
-        if self.state == PointSelectionState.noState:
-            print("State is none")
-        elif self.state == PointSelectionState.addingTP:
-            self.start_adding_tp_btn.hide()
-            self.start_adding_fp_btn.show()
-            self.addPointsLayer(pointType=PointType.TruePositive)
-
-        elif self.state == PointSelectionState.addingFP:
-            self.start_adding_fp_btn.hide()
-            self.start_adding_fn_btn.show()
-            self.addPointsLayer(pointType=PointType.FalsePositive)
-
-        elif self.state == PointSelectionState.addingFN:
-            self.start_adding_fn_btn.hide()
-            self.peformAnalysisButton.show()
-            self.addPointsLayer(pointType=PointType.FalseNegative)
-
-        else:
-            print("Unknown State")
-
     def getAllSubsectionPolygons(self):
         layers = []
         for layer in self.viewer.layers:
@@ -260,6 +213,16 @@ class PointBasedDataAnalyticsWidget(QWidget):
 
         allStatsDicts = []
         
+        # These are being populated to get the mean stats for the end
+        tpCounts = []
+        fpCounts = []
+        fnCounts = []
+        precisions = []
+        recalls = []
+        fScores = []
+        accuracies = []
+        jaccardIndexes = []
+
         for layer in subsectionLayers:
             polygons = layer.data
             if len(polygons) > 0:
@@ -269,19 +232,45 @@ class PointBasedDataAnalyticsWidget(QWidget):
                 polygon_FP = getPointsCount(self=self, pointType=PointType.FalsePositive, polygon=polygonToAnalyze)
                 polygon_FN = getPointsCount(self=self, pointType=PointType.FalseNegative, polygon=polygonToAnalyze)
                 
-                allStatsDicts= allStatsDicts + self.performStatistics(layer.name,
-                                                                      polygon_TP,
-                                                                      polygon_FP,
-                                                                      polygon_FN)
+                stats = self.performStatistics(layer.name, polygon_TP, polygon_FP, polygon_FN) 
+
+                allStatsDicts= allStatsDicts + stats
+                tpCounts.append(stats[0]["True Positive"])
+                fpCounts.append(stats[0]["False Positive"])
+                fnCounts.append(stats[0]["False Negative"])
+                precisions.append(stats[1]["Precision"])
+                recalls.append(stats[1]["Recall"])
+                fScores.append(stats[1]["F-Score"])
+                accuracies.append(stats[1]["Accuracy"])
+                jaccardIndexes.append(stats[1]["Jaccard Index"])
+
+        # If there is anything in the mean dictionaries
+        if len(tpCount) > 0:
+            # calculate means
+            meanStatsDict = {
+                "Stats Section" : "Mean",
+                "True Positive": sum(tpCounts) / len(tpCounts),
+                "False Positive": sum(fpCounts) / len(fpCounts),
+                "False Negative": sum(fnCounts) / len(fnCounts),
+                "Precision": sum(precisions) / len(precisions),
+                "Recall": sum(recalls) / len(recalls),
+                "F-Score": sum(fScores) / len(fScores),
+                "Accuracy": sum(accuracies) / len(accuracies),
+                "Jaccard Index": sum(jaccardIndexes) / len(jaccardIndexes)
+            }
+
+        allStatsDicts.append(meanStatsDict)
         
+        # Calculate the overall Stats
         tpCount = getPointsCount(self=self, pointType=PointType.TruePositive, polygon=None)
         fpCount = getPointsCount(self=self, pointType=PointType.FalsePositive, polygon=None)
         fnCount = getPointsCount(self=self, pointType=PointType.FalseNegative, polygon=None)
         
-        allStatsDicts = allStatsDicts + self.performStatistics("Overall Stats",
+        overallStats = self.performStatistics("Overall Stats",
                                                                tpCount,
                                                                 fpCount,
                                                                 fnCount)
+        allStatsDicts = allStatsDicts + overallStats
         
         self.exportStats(allStatsDicts)
 
