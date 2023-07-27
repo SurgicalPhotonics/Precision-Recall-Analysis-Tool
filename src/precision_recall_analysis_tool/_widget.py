@@ -245,7 +245,7 @@ class PointBasedDataAnalyticsWidget(QWidget):
                 jaccardIndexes.append(stats[1]["Jaccard Index"])
 
         # If there is anything in the mean dictionaries
-        if len(tpCount) > 0:
+        if len(tpCounts) > 0:
             # calculate means
             meanStatsDict = {
                 "Stats Section" : "Mean",
@@ -398,8 +398,10 @@ def addShapesLayer(self):
     if existingShapeLayer is None:
         maskDrawingLayer = self.viewer.add_shapes(name=layerName)
         maskDrawingLayer.mode = Mode.ADD_POLYGON
+        maskDrawingLayer.opacity = 0.45
     else:
         existingShapeLayer.mode = Mode.ADD_POLYGON
+        existingShapeLayer.opacity = 0.45
         existingShapeLayer.visible = True
         getImageLayer(self=self, named="raw").visible = True
         getLabelsLayer(self=self,named="mask").visible = True
@@ -443,6 +445,7 @@ def createMasksAndNewLayers(self):
                                                         name=f"section{index}_polygon",
                                                         face_color='#55ffff')
             isolatedPolygon.opacity = 0.2
+            isolatedPolygon.visible = True
 
             sectionedImageData = mask * layer_image.data
             sectionedImageLayer = self.viewer.add_image(sectionedImageData,
