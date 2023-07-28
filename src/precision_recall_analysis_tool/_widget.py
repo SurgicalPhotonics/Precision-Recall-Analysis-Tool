@@ -445,12 +445,12 @@ def createMasksAndNewLayers(self):
                                                         name=f"section{index}_polygon",
                                                         face_color='#55ffff')
             isolatedPolygon.opacity = 0.2
-            isolatedPolygon.visible = True
+            isolatedPolygon.visible = False
 
             sectionedImageData = mask * layer_image.data
             sectionedImageLayer = self.viewer.add_image(sectionedImageData,
                                                         name=f'section{index}_image',
-                                                        colormap='green',
+                                                        colormap='gray',
                                                         blending='additive')
             sectionedImageLayer.gamma = 2
             sectionedImageLayer.opacity = 0.5
